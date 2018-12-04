@@ -1,8 +1,9 @@
-var express = require("express");
-var morgan = require("morgan");
-var mongoose = require("mongoose");
-var bodyParser = require("body-parser");
-
+var express             = require("express");
+var morgan              = require("morgan");
+var mongoose            = require("mongoose");
+var bodyParser          = require("body-parser");
+var ejs                 = require("ejs");
+var ejs_mate            =require("ejs-mate");
 
 var User = require("./models/user");
 
@@ -21,11 +22,27 @@ mongoose.connect("mongodb://volkanarisli:volk0198@ds123224.mlab.com:23224/ecomme
 });
 
 //Middleware
+app.use(express.static(__dirname+"/public"));
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.engine("ejs",ejs_mate);
+app.set("view engine","ejs");
+
+app.get("/",function (req,res) {
+    res.render("main/home");
+    
+})
+
+app.get("/about",function (req,res) {
+    res.render("main/about");
+    
+})
+
+
+
 
 app.post("/create-user", function (req, res) {
     var user = new User();
