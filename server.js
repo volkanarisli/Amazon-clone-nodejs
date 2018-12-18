@@ -1,17 +1,23 @@
-var express             = require("express");
-var morgan              = require("morgan");
-var mongoose            = require("mongoose");
-var bodyParser          = require("body-parser");
-var ejs                 = require("ejs");
-var ejs_mate            =require("ejs-mate");
+var express = require("express");
+var morgan = require("morgan");
+var mongoose = require("mongoose");
+var bodyParser = require("body-parser");
+var ejs = require("ejs");
+var ejs_mate = require("ejs-mate");
+var session = require("express-session");
+var cookieParser = require("cookie-parser");
+var flash = require("express-flash");
+var MongoStroe = require("connect-mongo");
+var passport = require("passport");
 
+var secret = require("./config/secret")
 var User = require("./models/user");
 
 var app = express();
 
 
 
-mongoose.connect("mongodb://volkanarisli:volk0198@ds123224.mlab.com:23224/ecommerce", {
+mongoose.connect(secret.database, {
     useNewUrlParser: true
 }, function (err) {
     if (err) {
@@ -22,43 +28,36 @@ mongoose.connect("mongodb://volkanarisli:volk0198@ds123224.mlab.com:23224/ecomme
 });
 
 //Middleware
-app.use(express.static(__dirname+"/public"));
+app.use(express.static(__dirname + "/public"));
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-app.engine("ejs",ejs_mate);
-app.set("view engine","ejs");
+app.use(cookieParser());
+app.use(session({
+    resave: true,
+    saveUninitialized: true,
+    secret: secret.secretKey,
+    store: new MongoStroe({
+        url: secret.database,
+        autoReconnect: true
+    })
+}));
+app.use(flash());
 
-app.get("/",function (req,res) {
-    res.render("main/home");
-    
-})
+app.engine("ejs", ejs_mate);
+app.set("view engine", "ejs");
 
-app.get("/about",function (req,res) {
-    res.render("main/about");
-    
-})
+var mainRoutes = require("./routes/main");
+var userRoutes = require("./routes/user");
 
-
-
-
-app.post("/create-user", function (req, res) {
-    var user = new User();
-
-    user.profile.name = req.body.name;
-    user.password = req.body.password;
-    user.email = req.body.email;
-
-    user.save(function (err) {
-        if (err) return next(err);
-        res.json("Succesfully created a new user");
-    });
-});
+app.use(mainRoutes);
+app.use(userRoutes)
 
 
-app.listen(3000, function (err) {
+
+app.listen(secret.port, function (err) {
     if (err) throw err;
-    console.log("Server is Running on port 3000");
+    console.log("Server is Running on port " + secret.port);
 });
