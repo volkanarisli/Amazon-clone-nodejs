@@ -14,6 +14,8 @@ var passport = require('passport');
 var secret = require('./config/secret');
 var User = require('./models/user');
 var Category = require("./models/category");
+var cartLength = require('./middlewares/middlewares');
+
 var app = express();
 
 mongoose.connect(secret.database, function (err) {
@@ -48,6 +50,7 @@ app.use(function (req, res, next) {
   res.locals.user = req.user;
   next();
 });
+app.use(cartLength);
 
 
 app.use(function (req, res, next) {
@@ -71,6 +74,7 @@ app.use(mainRoutes);
 app.use(userRoutes);
 app.use(adminRoutes);
 app.use('/api',apiRoutes);
+
 
 app.listen(secret.port, function (err) {
   if (err) throw err;
