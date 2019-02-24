@@ -1,6 +1,7 @@
 var router = require('express').Router();
 var User = require("../models/user");
 var Product = require('../models/product');
+var Cart = require('../models/cart');
 
 
 
@@ -51,32 +52,52 @@ stream.on('error', function (err) {
 });
 
 
-router.get('/cart',function(req , res, next){
+router.get('/cart', function (req, res, next) {
   Cart
-    .findOne({owner: req.user._id})
+    .findOne({
+      owner: req.user._id
+    })
     .populate('items.item')
-    .exec(function(err, foundCart){
-      if(err) return next(err);
-      res.render('main/cart',{
-        cart: foundCart
+    .exec(function (err, foundCart) {
+      if (err) return next(err);
+      res.render('main/cart', {
+        foundCart: foundCart,
+        message : req.flash('remove')
       });
     });
 });
 
-router.post('/product/:product._id', function () {
+router.post('/product/:product_id', function (req, res, next) {
   Cart.findOne({
     owner: req.user._id
   }, function (err, cart) {
     cart.items.push({
-      item: req.body.product._id,
+      item: req.body.product_id,
       price: parseFloat(req.body.priceValue),
       quantity: parseInt(req.body.quantity)
     });
+
     cart.total = (cart.total + parseFloat(req.body.priceValue)).toFixed(2);
+
     cart.save(function (err) {
       if (err) return next(err);
       return res.redirect('/cart');
-    })
+    });
+  });
+});
+
+router.post('/remove', function (req, res, next) {
+  Cart.findOne({
+    owner: req.user._id
+  }, function (err, foundCart) {
+    foundCart.items.pull(String(req.body.item));
+
+    foundCart.total = (foundCart.total - parseFloat(req.body.price)).toFixed(2);
+    foundCart.save(function (err, found) {
+      if (err) return NodeList(err);
+      req.flash('remove', 'Succesfully removed');
+      res.redirect('/cart');
+    });
   });
 });
 
